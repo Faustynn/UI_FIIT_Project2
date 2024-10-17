@@ -216,7 +216,8 @@ def main():
                 if epochs_without_improvement >= patience:
                     print("Stop training")
                     break
-
+    # Save the best model
+    torch.save(model.state_dict(), 'model/model.pth')
 
 
 
