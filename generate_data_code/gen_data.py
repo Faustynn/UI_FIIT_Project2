@@ -1,7 +1,9 @@
 import subprocess
 import random
 import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor , ProcessPoolExecutor
+
+# Multiprocessing посмотреть библиотеки и как работает через ProcessPoolExecutor
 
 def run_main_py(instance_id, seed):
     print(f"Starting main.py - Process {instance_id} with seed {seed}")
@@ -28,3 +30,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
