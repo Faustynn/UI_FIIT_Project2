@@ -20,7 +20,7 @@ random_ranges = {
     'P': ((500, 5000), (-5000, 500))
 }
 
-# Initialize starting points from the config file
+# Init start points
 def init_start_points(config):
     try:
         start_points = {label: eval(config['start-bods'][label]) for label in class_labels.keys()}
@@ -36,25 +36,22 @@ def init_start_points(config):
             labels.append(class_labels[label])
     return np.array(points), np.array(labels)
 
-# KNN method using scikit-learn's KNeighborsClassifier
+# KNN scikit-learn's KNeighborsClassifier
 def KNN_method(points, colors, new_point, k):
-    # Init the classifier
-    knn = KNeighborsClassifier(n_neighbors=k)
+    knn = KNeighborsClassifier(n_neighbors=k, algorithm='kd_tree')
     knn.fit(points, colors)
-    # Predict the color for the new point
+
     predicted_color = knn.predict([new_point])[0]
     return predicted_color
 
-
-# Generate random points
+# Gen. random points
 def generate_random_points(num_points, k, start_points, start_colors, class_classes):
-    points = np.vstack([start_points, np.empty((0, 2), dtype=int)])  # Initialize with start points
-    colors = np.append(start_colors, np.empty(0, dtype=int))  # Initialize with start colors
+    points = np.vstack([start_points, np.empty((0, 2), dtype=int)])
+    colors = np.append(start_colors, np.empty(0, dtype=int))
     generated_points = set(map(tuple, start_points.tolist()))
 
-    class_classes_list = list(class_classes)  # Convert dict_keys to list
-
-    for class_type in class_classes_list:  # Use class_classes_list
+    class_classes_list = list(class_classes)
+    for class_type in class_classes_list:
         while num_points[class_classes_list.index(class_type)] > 0:
             x_range, y_range = random_ranges[class_type]
             new_point = (random.randint(*x_range), random.randint(*y_range))
@@ -73,10 +70,10 @@ def generate_random_points(num_points, k, start_points, start_colors, class_clas
                 num_points[class_classes_list.index(class_type)] -= 1
     return points, colors
 
-# Save data to a file
+# Save data to file
 def save_into_file(points, colors, k, random_seed,x):
     if x == 0:
-        output_dir = f"data/knn{k}"
+        output_dir = f"../data/knn/{k}"
         os.makedirs(output_dir, exist_ok=True)
     else:
         output_dir = f"EDA"
@@ -90,45 +87,35 @@ def save_into_file(points, colors, k, random_seed,x):
 # Plot points
 def plot_points(points, labels, title='Generated Points'):
     color_map = {0: 'red', 1: 'green', 2: 'blue', 3: 'purple'}
+
     plt.figure(figsize=(20, 15))
 
-    # Определяем цвета для точек
     colors = [color_map[label] for label in labels]
 
-    # Отрисовка точек
     plt.scatter(points[:, 0], points[:, 1], c=colors, alpha=0.8)
 
-    # Определяем границы для каждого класса и рисуем линии
-    random_ranges = {
-        'R': ((-5000, 500), (-500, 5000)),
-        'G': ((-500, 5000), (-500, 5000)),
-        'B': ((-5000, 500), (-5000, 500)),
-        'P': ((500, 5000), (-5000, 500))
-    }
-
     # red
-    plt.plot([-5000, 500], [-500, -500], color='#8b0000', linewidth=4)  # Горизонтальная черная линия по оси X
-    plt.plot([500, 500], [-500, 5000], color='#8b0000', linewidth=4)  # Вертикальная черная линия по оси Y
+    plt.plot([-5000, 500], [-500, -500], color='#8b0000', linewidth=4)  #  X
+    plt.plot([500, 500], [-500, 5000], color='#8b0000', linewidth=4)  #  Y
 
     # blue
-    plt.plot([-5000, 500], [500, 500], color='#00008b', linewidth=4)  # Горизонтальная черная линия по оси X
-    plt.plot([500, 500], [500, -5000], color='#00008b', linewidth=4)  # Вертикальная черная линия по оси Y
+    plt.plot([-5000, 500], [500, 500], color='#00008b', linewidth=4)
+    plt.plot([500, 500], [500, -5000], color='#00008b', linewidth=4)
 
     # green
-    plt.plot([-500, 5000], [-500, -500], color='#008b2d', linewidth=4)  # Горизонтальная черная линия по оси X
-    plt.plot([-500, -500], [-500, 5000], color='#008b2d', linewidth=4)  # Вертикальная черная линия по оси Y
+    plt.plot([-500, 5000], [-500, -500], color='#008b2d', linewidth=4)
+    plt.plot([-500, -500], [-500, 5000], color='#008b2d', linewidth=4)
 
     # purple
-    plt.plot([-500, 5000], [500, 500], color='#ef00fb', linewidth=4)  # Горизонтальная черная линия по оси X
-    plt.plot([-500, -500], [500, -5000], color='#ef00fb', linewidth=4)  # Вертикальная черная линия по оси Y
+    plt.plot([-500, 5000], [500, 500], color='#ef00fb', linewidth=4)
+    plt.plot([-500, -500], [500, -5000], color='#ef00fb', linewidth=4)
 
-    # Заголовок и параметры графика
     plt.title(title)
     plt.xlim(-5000, 5000)
     plt.ylim(-5000, 5000)
     plt.grid(True)
-    plt.axhline(0, color='white', linewidth=1)  # Отрисовка оси X
-    plt.axvline(0, color='white', linewidth=1)  # Отрисовка оси Y
+    plt.axhline(0, color='white', linewidth=1)  # X
+    plt.axvline(0, color='white', linewidth=1)  # Y
 
     plt.show()
 

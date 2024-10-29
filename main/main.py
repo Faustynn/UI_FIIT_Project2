@@ -15,6 +15,12 @@ from sklearn.model_selection import train_test_split
 config = configparser.ConfigParser()
 config.read('config/config.txt')
 
+barriers = {
+    'R': {'horizontal': -500, 'vertical': 500},
+    'G': {'horizontal': -500, 'vertical': -500},
+    'B': {'horizontal': 500, 'vertical': 500},
+    'P': {'horizontal': 500, 'vertical': -500},
+}
 
 # NN definition
 class ClassifierNN(nn.Module):
@@ -45,17 +51,18 @@ class PointsDataset(Dataset):
     def __len__(self):
         return len(self.points)
 # Load data from directory
-def load_data_from_directory(directory_path):
+def load_data_from_directories(directories):
     points = []
     labels = []
-    for filename in os.listdir(directory_path):
-        if filename.endswith('.csv'):
-            file_path = os.path.join(directory_path, filename)
-            with open(file_path, 'r') as f:
-                for line in f:
-                    x, y, label = line.strip().split(',')
-                    points.append([float(x), float(y)])
-                    labels.append(int(label))
+    for directory_path in directories:
+        for filename in os.listdir(directory_path):
+            if filename.endswith('.csv'):
+                file_path = os.path.join(directory_path, filename)
+                with open(file_path, 'r') as f:
+                    for line in f:
+                        x, y, label = line.strip().split(',')
+                        points.append([float(x), float(y)])
+                        labels.append(int(label))
     return np.array(points), np.array(labels)
 
 
@@ -109,13 +116,26 @@ def generate_random_points(num_points, points, labels, model):
         labels.append(predicted.item())
 
     return np.array(points), np.array(labels)
-
+def calculate_penalty(points, labels, barriers):
+    penalty = 0.0
+    for i, (x, y) in enumerate(points):
+        label = labels[i]
+        if label == 0 and (x > barriers['R']['horizontal'] or y > barriers['R']['vertical']):
+            penalty += 1.0  # Penalty for R
+        elif label == 1 and (x < barriers['G']['horizontal'] or y > barriers['G']['vertical']):
+            penalty += 1.0  # Penalty for G
+        elif label == 2 and (x > barriers['B']['horizontal'] or y < barriers['B']['vertical']):
+            penalty += 1.0  # Penalty for B
+        elif label == 3 and (x < barriers['P']['horizontal'] or y < barriers['P']['vertical']):
+            penalty += 1.0  # Penalty for P
+    return penalty
 
 # Train the model
-def train_model(model, train_loader, optimizer, criterion, early_stopping_patience, test_loader,knn):
+def train_model(model, train_loader, optimizer, criterion, early_stopping_patience, test_loader, knn, barriers):
     best_accuracy = 0.0
     epochs_without_improvement = 0
     epoch = 0
+
     while True:
         model.train()
         running_loss = 0.0
@@ -123,9 +143,14 @@ def train_model(model, train_loader, optimizer, criterion, early_stopping_patien
             optimizer.zero_grad()
             outputs = model(batch_points)
             loss = criterion(outputs, batch_labels)
-            loss.backward()
+
+            # Calculate penalty and add it to loss
+            penalty = calculate_penalty(batch_points.numpy(), batch_labels.numpy(), barriers)
+            total_loss = loss + penalty * 0.01  # Adjust penalty impact
+
+            total_loss.backward()
             optimizer.step()
-            running_loss += loss.item()
+            running_loss += total_loss.item()
 
         epoch += 1
         print(f'Epoch {epoch}, Loss: {running_loss / len(train_loader)}')
@@ -149,12 +174,12 @@ def train_model(model, train_loader, optimizer, criterion, early_stopping_patien
             best_accuracy = accuracy
             epochs_without_improvement = 0
             # Save the model if it improves
-            torch.save(model.state_dict(), f'model/model_knn{knn}.pth')
-            print(f'Model saved to model_knn{knn}.pth')
+            torch.save(model.state_dict(), f'model/model_knn.pth')
+            print(f'Model saved to model_knn.pth')
         else:
             epochs_without_improvement += 1
 
-        # If no improvement for 'early_stopping_patience' epochs, stop training
+        # Early stopping condition
         if epochs_without_improvement >= early_stopping_patience:
             print(f'Early stopping triggered. No improvement for {early_stopping_patience} epochs.')
             break
@@ -179,15 +204,17 @@ def main():
 
     # Check if model file exists
     knn = int(config['generate']['knn'])
-    model_path = f'model/model_knn{knn}.pth'
+    model_path = f'model/model_knn.pth'
 
     if os.path.exists(model_path):
         print(f'Loading existing model from {model_path}')
         model.load_state_dict(torch.load(model_path))
     else:
+        # Directories to load data from
+        directories = [f'data/knn/{i}' for i in range(3, 6)]
+
         # Load all data for training
-        directory_path = f'data/knn{knn}'
-        points, labels = load_data_from_directory(directory_path)
+        points, labels = load_data_from_directories(directories)
 
         # Combine start points with loaded points
         all_points = np.vstack([start_points, points])
@@ -210,7 +237,7 @@ def main():
 
         # Train the model with early stopping
         early_stopping_patience = int(config['neuron-settings']['early-stopping-patience'])
-        train_model(model, train_loader, optimizer, criterion, early_stopping_patience, test_loader,knn)
+        train_model(model, train_loader, optimizer, criterion, early_stopping_patience, test_loader, knn, barriers)
 
     # Generate and classify new points
     num_points_to_generate = int(config['generate']['num_generate'])
@@ -227,5 +254,6 @@ def main():
 
     # Calculate time
     print(f'Process time: {time.time() - start_time:.2f} sec.')
+
 if __name__ == '__main__':
     main()
