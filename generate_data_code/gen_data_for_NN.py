@@ -1,12 +1,21 @@
 import subprocess
-import random
 import os
 from concurrent.futures import ProcessPoolExecutor
+import configparser
+
+config = configparser.ConfigParser()
+config.read('../config/config.txt')
+
 
 def run_main_py(instance_id, seed):
-    print(f"Starting process {instance_id} with seed {seed}")
+    print(f"Start process {instance_id} with seed {seed}")
+    k = config['generate']['knn']
 
-    process = subprocess.Popen(["python", "main.py", str(seed)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+        ["python", "generate_knn_data.py", str(seed), k],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
     stdout, stderr = process.communicate()
 
     if process.returncode == 0:
@@ -14,21 +23,18 @@ def run_main_py(instance_id, seed):
     else:
         print(f"Error for process {instance_id} with seed {seed}: {stderr.decode()}")
 
-def main():
-    used_seeds = set()
-    max_workers = os.cpu_count()
 
+def main():
+    max_workers = os.cpu_count()
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = []
-        for i in range(4):
-            seed = random.randint(0, 10000)
-            while seed in used_seeds:
-                seed = random.randint(0, 10000)
-            used_seeds.add(seed)
+        for i in range(100):
+            seed = i + 1
             futures.append(executor.submit(run_main_py, i + 1, seed))
 
         for future in futures:
             future.result()
+
 
 if __name__ == "__main__":
     main()

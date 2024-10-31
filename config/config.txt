@@ -6,7 +6,7 @@ P = [[+4500, +4400], [+4100, +3000], [+1800, +2400], [+2500, +3400], [+2000, +14
 
 [generate]
 seed = 1
-knn = 5
+knn = 1
 num_generate = 40000
 R = 10000
 G = 10000
@@ -14,6 +14,6 @@ B = 10000
 P = 10000
 
 [neuron-settings]
-learning-rate = 0.001
-batch-size = 10
-early-stopping-patience = 5
+learning-rate = 0.002
+batch-size = 32
+early-stopping-patience = 10
