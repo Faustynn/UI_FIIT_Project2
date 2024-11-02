@@ -138,7 +138,7 @@ def train_model(model, train_loader, optimizer, early_stopping_patience, test_lo
                 torch.save(model.state_dict(), '../model/model.pth')
             else:
                 torch.save(model.state_dict(), 'model/model.pth')
-            print(f"Beter model saved with acuracy: {accuracy * 100:.2f}%")
+            print(f"Beter model saved with acurancy: {best_accuracy:.2f}")
         else:
             epochs_without_improvement += 1
 
@@ -183,7 +183,7 @@ def classify(model, num_points):
 
     with torch.no_grad():
         outputs = model(points_tensor)
-        _, predicted_labels = torch.max(outputs, 1)
+        buff, predicted_labels = torch.max(outputs, 1)
 
     return generated_points, predicted_labels.cpu().numpy(),labels
 
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     torch.manual_seed(seed)
 
     points, labels = init_start_points()
-    X_train, X_test, y_train, y_test = train_test_split(points, labels, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(points, labels, test_size=0.2, random_state=seed)
 
     train_dataset = PointsDataset(X_train, y_train)
     test_dataset = PointsDataset(X_test, y_test)

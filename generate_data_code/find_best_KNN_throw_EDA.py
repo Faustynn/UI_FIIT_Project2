@@ -9,11 +9,14 @@ config = configparser.ConfigParser()
 config.read('config/config.txt')
 class_labels = {'B': 0, 'P': 1, 'R': 2, 'G': 3}
 
+seed = config["generate"]["seed"]
+np.random.seed(int(seed))
+
 def tune_k(points, colors, max_k=20):
     accuracies = []
     k_values = range(1, max_k + 1)
 
-    X_train, X_test, y_train, y_test = train_test_split(points, colors, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(points, colors, test_size=0.2, random_state=seed)
 
     for k in k_values:
         knn = KNeighborsClassifier(n_neighbors=k)

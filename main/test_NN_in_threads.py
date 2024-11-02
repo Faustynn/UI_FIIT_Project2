@@ -10,9 +10,9 @@ def run_main_py(instance_id, seed):
     stdout, stderr = process.communicate()
 
     if process.returncode == 0:
-        print(f"Output for process {instance_id}: {stdout.decode()}")
+        print(f"Output for process {instance_id}: \n{stdout.decode()}")
     else:
-        print(f"Error for process {instance_id} with seed {seed}: {stderr.decode()}")
+        print(f"Error for process {instance_id} with seed {seed}: \n{stderr.decode()}")
 
 def main():
     used_seeds = set()
@@ -20,7 +20,7 @@ def main():
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = []
-        for i in range(4):
+        for i in range(50):
             seed = random.randint(0, 10000)
             while seed in used_seeds:
                 seed = random.randint(0, 10000)

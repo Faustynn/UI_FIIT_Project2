@@ -3,3 +3,4 @@
 .DS_Store
 UI_Zadanie2A_Documentation.docx
 results/
+__pycache__
